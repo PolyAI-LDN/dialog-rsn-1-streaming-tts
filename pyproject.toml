@@ -1,0 +1,11 @@
+[project]
+name = "dialog-rsn-1-streaming-tts"
+version = "0.1.0"
+description = "Dialog-RSN-1 replies spoken through ElevenLabs as they stream, with barge-in and playback reports"
+requires-python = ">=3.12"
+dependencies = [
+    "websockets>=14",
+    "sounddevice>=0.5.2",
+    "numpy>=2.0",
+    "python-dotenv>=1.0",
+]
