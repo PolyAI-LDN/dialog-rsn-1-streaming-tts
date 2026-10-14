@@ -196,7 +196,7 @@ async def send_audio(ws, chunks):
 
 async def main(args) -> None:
     load_dotenv()
-    for var in ("DIALOGUE_API_KEY", "ELEVENLABS_API_KEY"):
+    for var in ("DIALOG_API_KEY", "ELEVENLABS_API_KEY"):
         if not os.environ.get(var):
             sys.exit(f"{var} is not set. Copy .env.example to .env and fill it in.")
 
@@ -204,7 +204,7 @@ async def main(args) -> None:
                         os.environ.get("ELEVENLABS_VOICE_ID", "EXAVITQu4vr4xnSDxMaL"),
                         os.environ.get("ELEVENLABS_MODEL_ID", "eleven_flash_v2_5"))
     await tts.connect()
-    headers = {"X-API-KEY": os.environ["DIALOGUE_API_KEY"]}
+    headers = {"X-API-KEY": os.environ["DIALOG_API_KEY"]}
     async with websockets.connect(URL, additional_headers=headers) as ws:
         call = Call(ws, tts, verbose=args.verbose)
         await call.send({"type": "session.update", "session": {

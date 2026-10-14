@@ -36,7 +36,7 @@ You need Python 3.12, [uv](https://docs.astral.sh/uv/), a Dialog-RSN-1 key and a
 API key. ElevenLabs' free tier works.
 
 ```bash
-cp .env.example .env    # add DIALOGUE_API_KEY and ELEVENLABS_API_KEY
+cp .env.example .env    # add DIALOG_API_KEY and ELEVENLABS_API_KEY
 uv sync
 
 uv run agent.py --say "Tell me three facts about the Moon."   # one text turn, spoken
