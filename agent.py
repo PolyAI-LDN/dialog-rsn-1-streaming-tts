@@ -25,9 +25,9 @@ from dotenv import load_dotenv
 from elevenlabs_tts import ElevenLabsTTS
 from text import TagStripper, speakable
 
-load_dotenv()   # before URL is read, so DIALOGUE_URL in .env counts
+load_dotenv()   # before URL is read, so DIALOG_REALTIME_URL in .env counts
 
-URL = os.environ.get("DIALOGUE_URL", "wss://api.studio.poly.ai/v1/realtime")
+URL = os.environ.get("DIALOG_REALTIME_URL", "wss://api.studio.poly.ai/v1/realtime")
 SAMPLE_RATE = 16_000   # Dialog-RSN-1's native input rate
 BLOCKSIZE = 512        # 32 ms, the detector's frame size
 REPORT_EVERY = 0.25    # seconds between playback reports
