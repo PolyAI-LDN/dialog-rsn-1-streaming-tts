@@ -32,8 +32,8 @@ it has actually played.
 
 ## Run it
 
-You need Python 3.12, [uv](https://docs.astral.sh/uv/), a Dialog-RSN-1 key and an ElevenLabs
-API key. ElevenLabs' free tier works.
+You need Python 3.12, [uv](https://docs.astral.sh/uv/), a Dialog-RSN-1 API key from [studio.poly.ai](https://studio.poly.ai): sign up or log in, then create one in the **API Keys** tab,
+and an ElevenLabs API key. ElevenLabs' free tier works.
 
 ```bash
 cp .env.example .env    # add DIALOG_API_KEY and ELEVENLABS_API_KEY
