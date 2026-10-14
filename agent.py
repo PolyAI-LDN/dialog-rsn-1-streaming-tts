@@ -25,7 +25,9 @@ from dotenv import load_dotenv
 from elevenlabs_tts import ElevenLabsTTS
 from text import TagStripper, speakable
 
-URL = os.environ.get("DIALOGUE_URL", "wss://api.studio.poly.ai/v1/realtime")
+load_dotenv()   # before URL is read, so DIALOG_REALTIME_URL in .env counts
+
+URL = os.environ.get("DIALOG_REALTIME_URL", "wss://api.studio.poly.ai/v1/realtime")
 SAMPLE_RATE = 16_000   # Dialog-RSN-1's native input rate
 BLOCKSIZE = 512        # 32 ms, the detector's frame size
 REPORT_EVERY = 0.25    # seconds between playback reports
@@ -195,7 +197,6 @@ async def send_audio(ws, chunks):
 
 
 async def main(args) -> None:
-    load_dotenv()
     for var in ("DIALOG_API_KEY", "ELEVENLABS_API_KEY"):
         if not os.environ.get(var):
             sys.exit(f"{var} is not set. Copy .env.example to .env and fill it in.")
@@ -210,7 +211,7 @@ async def main(args) -> None:
         await call.send({"type": "session.update", "session": {
             "instructions": INSTRUCTIONS,
             "output_modalities": ["text"],
-            "audio": {"input": {"format": {"type": "audio/pcm"},
+            "audio": {"input": {"format": {"type": "audio/pcm", "rate": SAMPLE_RATE},
                                 "turn_detection": {"type": "server_vad", "create_response": True}}},
         }})
         reporter = asyncio.create_task(call.report_playback())
