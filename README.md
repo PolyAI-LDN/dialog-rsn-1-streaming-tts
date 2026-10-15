@@ -1,8 +1,9 @@
 # Streaming Dialog-RSN-1 replies to text-to-speech
 
-Companion code for [Streaming text to your text-to-speech](https://dialog-rsn-1-eap-docs.pages.dev/dialog-rsn-1/guides/streaming-text-to-speech/).
+Companion code for [Streaming text to your text-to-speech](https://docs.poly.ai/dialog-rsn-1/guides/streaming-text-to-speech).
 
-Dialog-RSN-1 answers in text. This agent speaks each reply through
+By default, Dialog-RSN-1 speaks each reply itself. This agent opts out with
+`output_modalities: ["text"]` to use its own text-to-speech. It speaks each reply through
 [ElevenLabs](https://elevenlabs.io) while the text is still arriving, stops cleanly when the
 caller talks over it, and tells the server what the caller actually heard.
 
