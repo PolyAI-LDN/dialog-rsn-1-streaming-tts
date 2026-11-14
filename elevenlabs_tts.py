@@ -37,10 +37,14 @@ class ElevenLabsTTS:
         self._final = asyncio.Event()      # ElevenLabs has sent the last audio for it
         self._chars: list[tuple[int, str]] = []   # (start ms within the reply, character)
         self._received_ms = 0
+        self._failure: Exception | None = None
+        self._reader_closed = False
 
     async def connect(self) -> None:
         self._ws = await websockets.connect(self.url, max_size=None,
                                             additional_headers={"xi-api-key": self.api_key})
+        self._failure = None
+        self._reader_closed = False
         self._reader = asyncio.create_task(self._read())
 
     async def close(self) -> None:
@@ -56,6 +60,10 @@ class ElevenLabsTTS:
 
     def start(self, response_id: str) -> None:
         """A new context for a new response. Nothing is sent until its first text."""
+        if self._failure is not None:
+            raise self._failure
+        if self._reader_closed:
+            raise RuntimeError("ElevenLabs socket closed; connect again before a new response")
         self.context = response_id
         self._opened = self._closed = self._cancelled = False
         self._final.clear()
@@ -101,6 +109,8 @@ class ElevenLabsTTS:
         if not self._opened:
             return
         await self._final.wait()
+        if self._failure is not None:
+            raise self._failure
         while not self.speaker.finished:
             await asyncio.sleep(0.02)
 
@@ -119,28 +129,37 @@ class ElevenLabsTTS:
             await self._ws.send(json.dumps(message))
         except websockets.ConnectionClosed as exc:
             print(f"[tts] socket closed: {exc}", file=sys.stderr)
+            raise
 
     async def _read(self) -> None:
-        async for raw in self._ws:
-            msg = json.loads(raw)
-            if msg.get("error"):
-                print(f"[tts] {msg}", file=sys.stderr)
-                continue
-            if msg.get("contextId") != self.context or self._cancelled:
-                continue   # late audio for a response that's been cancelled or replaced
-            if msg.get("audio"):
-                pcm = base64.b64decode(msg["audio"])
-                alignment = msg.get("alignment") or msg.get("normalizedAlignment")
-                if alignment:
-                    # Timings count from the start of this context, not of each chunk.
-                    self._chars.extend(zip(alignment["charStartTimesMs"], alignment["chars"]))
-                self._received_ms += len(pcm) // (RATE * 2 // 1000)
-                self.speaker.enqueue(pcm)
-            if msg.get("isFinal"):
-                if self._received_ms == 0:
-                    # This endpoint reports some refusals, such as a voice your plan can't
-                    # use, only as a final message with no audio. Say so rather than go quiet.
-                    print("[tts] ElevenLabs sent no audio for this reply. Check the voice ID "
-                          "and your plan: the REST endpoint shows the reason.", file=sys.stderr)
-                self.speaker.mark_end()
+        try:
+            async for raw in self._ws:
+                msg = json.loads(raw)
+                if msg.get("error"):
+                    raise RuntimeError(f"ElevenLabs: {msg}")
+                if msg.get("contextId") != self.context or self._cancelled:
+                    continue   # late audio for a response that's been cancelled or replaced
+                if msg.get("audio"):
+                    pcm = base64.b64decode(msg["audio"])
+                    alignment = msg.get("alignment") or msg.get("normalizedAlignment")
+                    if alignment:
+                        # Timings count from the start of this context, not of each chunk.
+                        self._chars.extend(zip(alignment["charStartTimesMs"], alignment["chars"]))
+                    self._received_ms += len(pcm) // (RATE * 2 // 1000)
+                    self.speaker.enqueue(pcm)
+                if msg.get("isFinal"):
+                    if self._received_ms == 0:
+                        # This endpoint reports some refusals, such as a voice your plan can't
+                        # use, only as a final message with no audio. Say so rather than go quiet.
+                        print("[tts] ElevenLabs sent no audio for this reply. Check the voice ID "
+                              "and your plan: the REST endpoint shows the reason.", file=sys.stderr)
+                    self.speaker.mark_end()
+                    self._final.set()
+        except Exception as exc:
+            self._failure = exc
+        finally:
+            self._reader_closed = True
+            if not self._final.is_set():
+                if self._failure is None:
+                    self._failure = RuntimeError("ElevenLabs socket closed before final audio")
                 self._final.set()
